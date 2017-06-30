@@ -14,7 +14,9 @@
 var grpc = require('grpc');
 
 var booksProto = grpc.load('books.proto');
-var bookStream;
+
+var events = require('events');
+var bookStream = new events.EventEmitter();
 
 // In-memory array of book objects
 var books = [{
@@ -24,15 +26,14 @@ var books = [{
 }];
 
 var server = new grpc.Server();
-server.addProtoService(booksProto.books.BookService.service, {
+server.addService(booksProto.books.BookService.service, {
     list: function(call, callback) {
         callback(null, books);
     },
     insert: function(call, callback) {
         var book = call.request;
         books.push(book);
-        if (bookStream)
-            bookStream.write(book);
+        bookStream.emit('new_book', book);
         callback(null, {});
     },
     get: function(call, callback) {
@@ -57,7 +58,9 @@ server.addProtoService(booksProto.books.BookService.service, {
         });
     },
     watch: function(stream) {
-        bookStream = stream;
+        bookStream.on('new_book', function(book){
+            stream.write(book);
+        });
     }
 });
 
