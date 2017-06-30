@@ -23,7 +23,7 @@ var books = [{
 }];
 
 var server = new grpc.Server();
-server.addProtoService(booksProto.books.BookService.service, {
+server.addService(booksProto.books.BookService.service, {
     list: function(call, callback) {
         callback(null, books);
     },
